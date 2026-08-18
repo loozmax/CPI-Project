@@ -343,6 +343,10 @@ namespace ClubPenguin
 
         public void End()
         {
+            // sceneLoaded removes itself when it fires; a room ended before the
+            // transition completes must not leave it behind to start schedules
+            // in whatever scene loads next.
+            eventDispatcher.RemoveListener<SceneTransitionEvents.TransitionComplete>(sceneLoaded);
             foreach (ICoroutine coroutine in coroutines)
             {
                 if (!coroutine.Completed && !coroutine.Cancelled)
@@ -405,7 +409,10 @@ namespace ClubPenguin
                         list.Add(statefulWorldObject2);
                     }
                 }
-                coroutines.Add(CoroutineRunner.StartPersistent(triggerScheduledWorldObjects(scheduledWorldObjectConfiguration, list), this, "triggerScheduledWorldObjects"));
+                if (list.Count > 0)
+                {
+                    coroutines.Add(CoroutineRunner.StartPersistent(triggerScheduledWorldObjects(scheduledWorldObjectConfiguration, list), this, "triggerScheduledWorldObjects"));
+                }
             }
         }
 
@@ -425,7 +432,7 @@ namespace ClubPenguin
                         activeIndex = (activeIndex + 1) % worldObjects.Count;
                         break;
                     case SelectionBehaviour.Random:
-                        activeIndex = UnityEngine.Random.Range(0, worldObjects.Count - 1);
+                        activeIndex = UnityEngine.Random.Range(0, worldObjects.Count);
                         break;
                     case SelectionBehaviour.NonRepeatingRandom:
                         activeIndex++;
